@@ -8,8 +8,13 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+type deps struct {
+	Shortener
+}
+
 type HttpServer struct {
 	R *chi.Mux
+	deps
 }
 
 type RoutesRegistrar func(r *chi.Mux)
