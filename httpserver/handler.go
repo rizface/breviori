@@ -1,20 +1,23 @@
 package httpserver
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/rizface/breviori/urlshortener"
 )
 
 type Shortener interface {
-	Short(url string) (string, error)
+	Short(context.Context, string) (string, error)
 }
 
-func handlerURLShortener(deps deps) http.HandlerFunc {
+func handlerURLShortener(ctx context.Context, deps deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var Payload struct {
 			URL string `json:"url"`
@@ -38,9 +41,17 @@ func handlerURLShortener(deps deps) http.HandlerFunc {
 			return
 		}
 
-		shortURL, err := deps.Shortener.Short(Payload.URL)
+		shortURL, err := deps.Shortener.Short(ctx, Payload.URL)
+		if errors.Is(err, urlshortener.ErrorKeyGen) {
+			writeHTTPResponse(w, httpResponse{
+				StatusCode: http.StatusUnprocessableEntity,
+				Message:    "Failed to generate short URL",
+				Data:       nil,
+			})
+		}
+
 		if err != nil {
-			slog.Error("httpserver: failed to short URL: %v", err)
+			slog.Error(fmt.Sprintf("failed to short URL: %v", err))
 			writeHTTPResponse(w, httpResponse{
 				StatusCode: http.StatusInternalServerError,
 				Message:    "Failed to short URL",

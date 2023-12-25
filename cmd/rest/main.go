@@ -6,7 +6,9 @@ import (
 )
 
 func main() {
-	database.NewPGX()
+	database.StartPG()
+
+	database.StartRedis()
 
 	server := httpserver.NewHTTPServer()
 

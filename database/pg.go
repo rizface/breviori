@@ -12,7 +12,7 @@ var (
 	err error
 )
 
-func NewPGX() {
+func StartPG() {
 	db, err = pgx.Connect(pgx.ConnConfig{
 		Host:     "localhost", // os.Getenv("BREVIORI_PG_HOST"),
 		Port:     5432,
@@ -25,9 +25,9 @@ func NewPGX() {
 		os.Exit(1)
 	}
 
-	slog.Info("connected to database")
+	slog.Info("connected to pg database")
 }
 
-func GetConnectionInstance() *pgx.Conn {
+func GetPGInstance() *pgx.Conn {
 	return db
 }
