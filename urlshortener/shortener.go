@@ -15,12 +15,6 @@ type Shortener struct {
 	*deps
 }
 
-type ShortnedURL struct {
-	Key       string
-	LongURL   string
-	ExpiredAt time.Time
-}
-
 func New() *Shortener {
 	return &Shortener{
 		deps: buildDependency(),
@@ -29,10 +23,7 @@ func New() *Shortener {
 
 func (s *Shortener) Short(ctx context.Context, url string) (string, error) {
 	const (
-		maxkeyLen         = 11
-		checkDuplicateKey = `
-			select id from url_key_pairs where key = $1
-		`
+		maxkeyLen     = 11
 		daysToExpired = 7
 	)
 
@@ -52,7 +43,7 @@ func (s *Shortener) Short(ctx context.Context, url string) (string, error) {
 		key = KeyGen(keyLen)
 		var id string
 
-		err := db.QueryRowEx(ctx, checkDuplicateKey, nil, key).Scan(&id)
+		err := db.QueryRowEx(ctx, `select id from url_key_pairs where key = $1`, nil, key).Scan(&id)
 		if errors.Is(err, pgx.ErrNoRows) {
 			keepShortening = false
 			continue
@@ -74,4 +65,29 @@ func (s *Shortener) Short(ctx context.Context, url string) (string, error) {
 	}
 
 	return key, nil
+}
+
+func (s *Shortener) GetURL(ctx context.Context, key string) (ShortnedURL, error) {
+	var (
+		db = s.deps.db
+		kp ShortnedURL
+	)
+
+	err := db.QueryRowEx(ctx, `
+		select id, url, key, expired_at from url_key_pairs where key = $1
+	`, nil, key).
+		Scan(&kp.Key, &kp.LongURL, &kp.Key, &kp.ExpiredAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return kp, ErrorKeyNotFound
+	}
+
+	if err != nil {
+		return kp, fmt.Errorf("failed to query key: %w", err)
+	}
+
+	if kp.IsExpired() {
+		return kp, ErrExpiredKey
+	}
+
+	return kp, nil
 }

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/rizface/breviori/urlshortener"
@@ -15,9 +16,10 @@ import (
 
 type Shortener interface {
 	Short(context.Context, string) (string, error)
+	GetURL(context.Context, string) (urlshortener.ShortnedURL, error)
 }
 
-func handlerURLShortener(ctx context.Context, deps deps) http.HandlerFunc {
+func handlerURLShortener(deps deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var Payload struct {
 			URL string `json:"url"`
@@ -41,7 +43,7 @@ func handlerURLShortener(ctx context.Context, deps deps) http.HandlerFunc {
 			return
 		}
 
-		shortURL, err := deps.Shortener.Short(ctx, Payload.URL)
+		shortURL, err := deps.Shortener.Short(r.Context(), Payload.URL)
 		if errors.Is(err, urlshortener.ErrorKeyGen) {
 			writeHTTPResponse(w, httpResponse{
 				StatusCode: http.StatusUnprocessableEntity,
@@ -67,5 +69,40 @@ func handlerURLShortener(ctx context.Context, deps deps) http.HandlerFunc {
 				"shortUrl": shortURL,
 			},
 		})
+	}
+}
+
+func handlerRedirection(deps deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		key := chi.URLParam(r, "key")
+
+		err := validation.Validate(key, validation.Required, validation.Length(8, 11))
+		if err != nil {
+			writeHTTPResponse(w, httpResponse{
+				StatusCode: http.StatusBadRequest,
+				Message:    err.Error(),
+			})
+			return
+		}
+
+		shurl, err := deps.Shortener.GetURL(r.Context(), key)
+		if errors.Is(err, urlshortener.ErrorKeyNotFound) {
+			writeHTTPResponse(w, httpResponse{
+				StatusCode: http.StatusNotFound,
+				Message:    err.Error(),
+			})
+			return
+		}
+
+		if err != nil {
+			slog.Error(fmt.Sprintf("failed to get URL: %v", err))
+			writeHTTPResponse(w, httpResponse{
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Failed to get URL",
+			})
+			return
+		}
+
+		http.Redirect(w, r, shurl.LongURL, http.StatusMovedPermanently)
 	}
 }
