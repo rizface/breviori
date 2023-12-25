@@ -40,7 +40,7 @@ func handlerURLShortener(deps deps) http.HandlerFunc {
 
 		shortURL, err := deps.Shortener.Short(Payload.URL)
 		if err != nil {
-			slog.Error("httpserver: failed to shot URL: %v", err)
+			slog.Error("httpserver: failed to short URL: %v", err)
 			writeHTTPResponse(w, httpResponse{
 				StatusCode: http.StatusInternalServerError,
 				Message:    "Failed to short URL",

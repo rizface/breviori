@@ -1,11 +1,25 @@
 package urlshortener
 
-type Shortener struct{}
+import (
+	"time"
+)
+
+type Shortener struct {
+	*deps
+}
+
+type ShortnedURL struct {
+	Key       string
+	LongURL   string
+	ExpiredAt time.Time
+}
 
 func New() *Shortener {
-	return &Shortener{}
+	return &Shortener{
+		deps: buildDependency(),
+	}
 }
 
 func (s *Shortener) Short(url string) (string, error) {
-	return "shortened", nil
+	return "", nil
 }
