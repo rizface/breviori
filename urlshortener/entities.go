@@ -3,9 +3,10 @@ package urlshortener
 import "time"
 
 type ShortnedURL struct {
-	Key       string
-	LongURL   string
-	ExpiredAt time.Time
+	Id        string    `json:"id"`
+	Key       string    `json:"key"`
+	LongURL   string    `json:"longUrl"`
+	ExpiredAt time.Time `json:"expiredAt"`
 }
 
 func (s ShortnedURL) IsExpired() bool {
