@@ -8,6 +8,8 @@ import (
 func main() {
 	database.StartPG()
 
+	database.Migrate()
+
 	database.StartRedis()
 
 	server := httpserver.NewHTTPServer()
