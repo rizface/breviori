@@ -1,0 +1,1 @@
+docker build -t breviori:latest -f Dockerfile .

@@ -13,9 +13,9 @@ var rdb *redis.Client
 
 func StartRedis() {
 	rdb = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", "localhost", "6379"), // os.Getenv("BREVIORI_REDIS_HOST")
-		Username: "breviori",                                // os.Getenv("BREVIORI_REDIS_USERNAME"),
-		Password: "breviori",                                // os.Getenv("BREVIORI_REDIS_PASSWORD")
+		Addr:     os.Getenv("BREVIORI_REDIS_HOST"),
+		Username: os.Getenv("BREVIORI_REDIS_USERNAME"),
+		Password: os.Getenv("BREVIORI_REDIS_PASSWORD"),
 	})
 
 	_, err := rdb.Ping(context.Background()).Result()
