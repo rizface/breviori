@@ -2,6 +2,10 @@ version: '3'
 
 services:
   breviori_db:
+    deploy:
+      resources:
+        limits:
+          memory: 500M
     container_name: breviori_db
     image: postgres:15
     environment:
@@ -19,8 +23,6 @@ services:
   breviori: 
     image: breviori:latest
     container_name:  breviori
-    ports:
-      - "8000:8000"
     environment:
       - BREVIORI_REDIS_HOST=breviori_redis:6379
       - BREVIORI_REDIS_USERNAME=breviori
@@ -33,3 +35,51 @@ services:
     depends_on:
       - breviori_db
       - breviori_redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthcheck"]
+      interval: 5s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
+  breviori2: 
+    image: breviori:latest
+    container_name:  breviori2
+    environment:
+      - BREVIORI_REDIS_HOST=breviori_redis:6379
+      - BREVIORI_REDIS_USERNAME=breviori
+      - BREVIORI_REDIS_PASSWORD=breviori
+      - BREVIORI_PG_HOST=breviori_db
+      - BREVIORI_PG_PORT=5432
+      - BREVIORI_PG_USER=postgres
+      - BREVIORI_PG_PASSWORD=password
+      - BREVIORI_PG_DATABASE=postgres
+    depends_on:
+      - breviori_db
+      - breviori_redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthcheck"]
+      interval: 5s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
+  prometheus:
+    container_name: prometheus_breviori
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/config/prometheus.yml
+    command: --config.file=/config/prometheus.yml
+  grafana:
+    container_name: grafana_breviori
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+  nginx:
+    container_name: nginx_breviori
+    image: nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+  

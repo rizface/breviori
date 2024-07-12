@@ -19,9 +19,9 @@ type HttpServer struct {
 
 type RoutesRegistrar func(r *chi.Mux)
 
-func NewHTTPServer() *HttpServer {
+func NewHTTPServer(rec Recorder) *HttpServer {
 	return &HttpServer{
-		R: chi.NewRouter(),
+		R: NewRouter(rec),
 	}
 }
 
@@ -36,6 +36,6 @@ func (h *HttpServer) Start() {
 	}
 
 	if err := http.ListenAndServe(":"+port, h.R); err != nil {
-		slog.Error("httpserver: failed to start server: %v", err)
+		slog.Error(err.Error())
 	}
 }

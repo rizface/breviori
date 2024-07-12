@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 10s
+rule_files:
+# - rule.rules
+scrape_configs:
+  - job_name: breviori
+    static_configs:
+      - targets: ["breviori:8000", "breviori2:8000"]
